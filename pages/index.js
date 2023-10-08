@@ -19,8 +19,37 @@ const DUMMY_MEETUPS = [
   },
 ];
 
-function HomePage() {
-  return <MeetupList meetups={DUMMY_MEETUPS} />;
+function HomePage(props) {
+  return <MeetupList meetups={props.meetups} />;
+}
+
+// export async function getServerSideProps(context) {
+//   // page is regenerated with every incoming request
+//   // If you have data that changes multiple times
+
+//   const req = context.req;
+//   const res = context.res;
+
+//   // Fetch data from an API
+
+//   return {
+//     props: {
+//       meetups: DUMMY_MEETUPS,
+//     },
+//   };
+// }
+
+export async function getStaticProps() {
+  // If you dont need to fetch data multiple times this is better
+  // Work better with caching
+
+  // Fetch data from an API
+  return {
+    props: {
+      meetups: DUMMY_MEETUPS,
+    },
+    revalidate: 1,
+  };
 }
 
 export default HomePage;

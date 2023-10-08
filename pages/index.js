@@ -1,23 +1,7 @@
-import MeetupList from "../components/meetups/MeetupList";
+import { MongoClient } from "mongodb";
 
-const DUMMY_MEETUPS = [
-  {
-    id: "m1",
-    title: "A First Meetup",
-    image:
-      "https://www.orientalescape.com/images/laos/header/1900x800/activities01.jpg",
-    address: "Some address 5, 12345 Some City",
-    description: "This is a first meetup!",
-  },
-  {
-    id: "m1",
-    title: "A Second Meetup",
-    image:
-      "https://www.orientalescape.com/images/laos/header/1900x800/interest01.jpg",
-    address: "Some address 5, 12345 Some City",
-    description: "This is a second meetup!",
-  },
-];
+import MeetupList from "../components/meetups/MeetupList";
+import { MONGODB_PASSWORD, MONGODB_USERNAME } from "../secrets";
 
 function HomePage(props) {
   return <MeetupList meetups={props.meetups} />;
@@ -43,10 +27,26 @@ export async function getStaticProps() {
   // If you dont need to fetch data multiple times this is better
   // Work better with caching
 
-  // Fetch data from an API
+  const client = await MongoClient.connect(
+    `mongodb+srv://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@cluster0.7wosptt.mongodb.net/meetups?retryWrites=true&w=majority`
+  );
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+
+  const meetups = await meetupsCollection.find().toArray();
+
+  client.close();
+
   return {
     props: {
-      meetups: DUMMY_MEETUPS,
+      meetups: meetups.map((meetup) => ({
+        title: meetup.title,
+        address: meetup.address,
+        image: meetup.image,
+        description: meetup.description,
+        id: meetup._id.toString(),
+      })),
     },
     revalidate: 1,
   };

@@ -1,52 +1,65 @@
+import { MongoClient, ObjectId } from "mongodb";
+
 import MeetupDetail from "../../components/meetups/MeetupDetail";
+import { MONGODB_PASSWORD, MONGODB_USERNAME } from "../../secrets";
 
 function MeetupDetails(props) {
   return (
     <MeetupDetail
-      image="https://www.orientalescape.com/images/laos/header/1900x800/activities01.jpg"
-      title="A First Meetup"
-      address="Some street 123, Some city"
-      description="This is a first meetup"
+      image={props.meetupData.image}
+      title={props.meetupData.title}
+      address={props.meetupData.address}
+      description={props.meetupData.description}
     />
   );
 }
 
 export async function getStaticPaths() {
+  const client = await MongoClient.connect(
+    `mongodb+srv://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@cluster0.7wosptt.mongodb.net/meetups?retryWrites=true&w=majority`
+  );
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+
+  const meetups = await meetupsCollection.find({}, { _id: 1 }).toArray();
+
+  client.close();
+
   return {
     fallback: false, // allows to pregenerate dinamically for incoming requests - if it's false will return 404 if the values are different to m1 or m2
-    paths: [
-      {
-        params: {
-          meetupId: "m1",
-        },
-      },
-      {
-        params: {
-          meetupId: "m2",
-        },
-      },
-    ],
+    paths: meetups.map((meetup) => ({
+      params: { meetupId: meetup._id.toString() },
+    })),
   };
 }
 
 // It would probably not change a lot of times
 
 export async function getStaticProps(context) {
-  // Fetch data for a single meetup
-
   const meetupId = context.params.meetupId;
 
-  console.log({ meetupId });
+  const client = await MongoClient.connect(
+    `mongodb+srv://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@cluster0.7wosptt.mongodb.net/meetups?retryWrites=true&w=majority`
+  );
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+
+  const selectedMeetup = await meetupsCollection.findOne({
+    _id: new ObjectId(meetupId),
+  });
+
+  client.close();
 
   return {
     props: {
       meetupData: {
-        id: meetupId,
-        image:
-          "https://www.orientalescape.com/images/laos/header/1900x800/activities01.jpg",
-        title: "A First Meetup",
-        address: "Some street 123, Some city",
-        description: "This is a first meetup",
+        id: selectedMeetup._id.toString(),
+        title: selectedMeetup.title,
+        address: selectedMeetup.address,
+        image: selectedMeetup.image,
+        description: selectedMeetup.description,
       },
     },
   };
